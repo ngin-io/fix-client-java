@@ -9,6 +9,16 @@ Configuration file is located at `resources/fixclientconfig`
 2) Set SenderCompID:     `SenderCompID=Public API key genereteat at BTC Markets website`
 3) Set PrivateKey:       `PrivateKey=Secrte API key genereteat at BTC Markets website`
 
+## Build
+
+`mvn clean install`
+
+## Run
+
+`mvn exec:java -Dexec.mainClass=io.ngin.fix.client.sample.java.FixRunner`
+
+Argument `-Dexec.args=/path-to/fixclient.cfg` can be passed to override FIX configuration.
+
 ## Basic flow
 
 1) Application `Logon` to FIX server -> `--------- Logon -FIX.4.4:PUBLIC_API_KEY->BTCM --------- `. Sleep 2 seconds
@@ -21,12 +31,3 @@ Configuration file is located at `resources/fixclientconfig`
 8) On the next heartbeat send cancel order with non-existing ID -> `---------  Received order reject. Order: SeqNumber :[10]. Reason: [Required tag missing, field=37] ---------`
 9) On the upcoming heartbeat shutting down initiator. Before logout is initiated -> `---------  Received message: [Logout] ---------`
 
-## Build
-
-`mvn clean install`
-
-## Run
-
-`mvn exec:java -Dexec.mainClass=io.ngin.fix.client.sample.java.FixRunner -Dexec.args=/path-to/fixclient.cfg`
-
-Argument `-Dexec.args=/path-to/fixclient.cfg` is optional and can be passed to override configuration.
