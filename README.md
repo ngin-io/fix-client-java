@@ -1,8 +1,15 @@
 # fix-client-java
 
-sample application demonstrating how to connect to interact with BTC Markets' FIX engine using Java application. 
+Sample application demonstrating how to connect to interact with BTC Markets' FIX engine using Java application. 
 
-#Basic flow
+# Configuration
+Configuration file is located at `resources/fixclientconfig`
+
+1) Set connection host:  `SocketConnectHost=fix.btcmarkets.net`
+2) Set SenderCompID:     `SenderCompID=Public API key genereteat at BTC Markets website`
+3) Set PrivateKey:       `PrivateKey=Secrte API key genereteat at BTC Markets website`
+
+# Basic flow
 
 1) Application `Logon` to FIX server -> `--------- Logon -FIX.4.4:PUBLIC_API_KEY->BTCM --------- `. Sleep 2 seconds
 2) On successful logon `limit order` is created -> `--------- Received execution report for limit order, Id: ID-1656093191324, Status: 0`. Sleep 2 seconds
@@ -14,20 +21,11 @@ sample application demonstrating how to connect to interact with BTC Markets' FI
 8) On the next heartbeat send cancel order with non-existing ID -> `---------  Received order reject. Order: SeqNumber :[10]. Reason: [Required tag missing, field=37] ---------`
 9) On the upcoming heartbeat shutting down initiator. Before logout is initiated -> `---------  Received message: [Logout] ---------`
 
-#Configuration
-
-Configuration file is located at `resources/fixclientconfig`
-
-1) Set connection host:  `SocketConnectHost=fix.btcmarkets.net`
-2) Set SenderCompID:     `SenderCompID=Public API key genereteat at BTCM website`
-3) Set PrivateKey:       `PrivateKey=Secrte API key genereteat at BTCM website`
-
-
-#Build
+# Build
 
 `mvn clean install`
 
-#Run
+# Run
 
 `mvn exec:java -Dexec.mainClass=io.ngin.fix.client.sample.java.FixRunner -Dexec.args=/path-to/fixclient.cfg`
 
