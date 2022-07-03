@@ -67,7 +67,7 @@ public class FixClientApplication extends MessageCracker implements Application 
 	}
 
 	public void onCreate(SessionID sessionId) {
-		System.out.println("--------- onCreate ---------");
+		System.out.println("--------- on Session Create ---------");
 	}
 
 	public void onLogon(SessionID sessionId) {
