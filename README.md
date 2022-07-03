@@ -3,7 +3,7 @@
 Sample application demonstrating how to connect to interact with BTC Markets' FIX engine using Java application. 
 
 ## Configuration
-Configuration file is located at `resources/fixclientconfig`
+Configuration file is located at `resources/fix/fixclient.cfg`
 
 1) Set connection host:  `SocketConnectHost=fix.btcmarkets.net`
 2) Set SenderCompID:     `SenderCompID=Public API key genereteat at BTC Markets website`
@@ -12,6 +12,8 @@ Configuration file is located at `resources/fixclientconfig`
 ## Build
 
 `mvn clean install`
+
+This application has been tested with JDK 17 
 
 ## Run
 
