@@ -241,12 +241,11 @@ public class FixClientApplication extends MessageCracker implements Application 
 	}
 
 	private static String getSendingTime(Message message) {
-		String sendingTime = Long.toString(System.currentTimeMillis());
 		try {
 			LocalDateTime dateTime = message.getHeader().getField(new UtcTimeStampField(SendingTime.FIELD)).getValue();
 			return Long.toString(dateTime.toInstant(ZoneOffset.UTC).toEpochMilli());
 		} catch (FieldNotFound e) {
-			return sendingTime;
+			throw new RuntimeException("Could not get UTC time from header SendingTime field");
 		}
 	}
 
