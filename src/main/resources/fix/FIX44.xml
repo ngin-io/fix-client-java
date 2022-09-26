@@ -65,6 +65,7 @@
    <field name='LeavesQty' required='N' />
    <field name='LastPx' required='N' />
    <field name='StopPx' required='N' />
+   <field name='TransactTime' required='N' />
   </message>
   <message name='OrderCancelReject' msgtype='9' msgcat='app'>
    <field name='OrderID' required='N' />
@@ -251,6 +252,7 @@
    <value enum='3' description='IMMEDIATE_OR_CANCEL' />
    <value enum='4' description='FILL_OR_KILL' />
   </field>
+  <field number='60' name='TransactTime' type='UTCTIMESTAMP' />
   <field number='89' name='Signature' type='DATA' />
   <field number='90' name='SecureDataLen' type='LENGTH' />
   <field number='91' name='SecureData' type='DATA' />
