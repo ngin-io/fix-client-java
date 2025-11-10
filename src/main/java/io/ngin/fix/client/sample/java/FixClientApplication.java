@@ -1,6 +1,5 @@
 package io.ngin.fix.client.sample.java;
 
-
 import quickfix.Application;
 import quickfix.ConfigError;
 import quickfix.FieldNotFound;
@@ -54,13 +53,21 @@ public class FixClientApplication extends MessageCracker implements Application 
 	private ClOrdID invalidCancelOrdClOrdId;
 	private final ExecutorService executor;
 
-	public FixClientApplication(SessionSettings settings) {
-		setSessions(settings);
-		this.executor = Executors.newSingleThreadExecutor();
-	}
+    private final boolean enableCancelOnDisconnect;
+    private final String cancelOnDisconnectType;
 
-	public void fromAdmin(Message message, SessionID sessionId) {
-	}
+    public FixClientApplication(SessionSettings settings) {
+        setSessions(settings);
+        this.executor = Executors.newSingleThreadExecutor();
+        this.enableCancelOnDisconnect = true;
+        this.cancelOnDisconnectType = "3";
+    }
+
+    public void fromAdmin(Message message, SessionID sessionId) {
+        if (message instanceof Logon) {
+            checkCancelOnDisconnectAck(message, sessionId);
+        }
+    }
 
 	public void fromApp(Message message, SessionID sessionId) throws UnsupportedMessageType, IncorrectTagValue, FieldNotFound {
 		crack(message, sessionId);
@@ -86,13 +93,17 @@ public class FixClientApplication extends MessageCracker implements Application 
 		System.out.printf("--------- Logout - %s --------- \n", sessionId);
 	}
 
-	public void toAdmin(Message message, SessionID sessionId) {
-		try {
-			crack(message, sessionId);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+    public void toAdmin(Message message, SessionID sessionId) {
+        if (message instanceof Logon && enableCancelOnDisconnect) {
+            setCancelOnDisconnectFields(message);
+        }
+
+        try {
+            crack(message, sessionId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 	public void toApp(Message message, SessionID sessionId) {
 	}
@@ -170,21 +181,70 @@ public class FixClientApplication extends MessageCracker implements Application 
 		}
 	}
 
-	private static void doLogon(Logon message, SessionID sessionId) throws FieldNotFound {
-		String msgType = message.getHeader().getString(MsgType.FIELD);
-		if (!Logon.MSGTYPE.equals(msgType)) {
-			return;
-		}
+    private static void doLogon(Logon logon, SessionID sessionId) throws FieldNotFound {
+        String msgType = logon.getHeader().getString(MsgType.FIELD);
+        if (!Logon.MSGTYPE.equals(msgType)) {
+            return;
+        }
 
-		String sendingTime = getSendingTime(message);
-		String senderCompID = sessionId.getSenderCompID();
+        String sendingTime = getSendingTime(logon);
+        String senderCompID = sessionId.getSenderCompID();
 
 		String signedMessage = CryptoUtils.signMessage(1, Logon.MSGTYPE, senderCompID, sendingTime,
 				senderCompToPrivetApiKeyMap.get(senderCompID));
 
-		message.setField(new StringField(RawData.FIELD, signedMessage));
-		message.setField(new IntField(RawDataLength.FIELD, signedMessage.length()));
-	}
+        logon.setField(new StringField(RawData.FIELD, signedMessage));
+        logon.setField(new IntField(RawDataLength.FIELD, signedMessage.length()));
+    }
+
+
+    private void setCancelOnDisconnectFields(Message message) {
+        try {
+            if (enableCancelOnDisconnect) {
+                message.setField(new StringField(getCancelOnDisconnectTypeField(), cancelOnDisconnectType));
+
+                String typeDescription = getCancelOnDisconnectTypeDescription(cancelOnDisconnectType);
+                System.out.printf("--------- Set CancelOnDisconnectType=%s (%s) for session ---------\n",
+                        cancelOnDisconnectType, typeDescription);
+            }
+        } catch (Exception e) {
+            System.err.println("Unexpected error setting CancelOnDisconnectType: " + e.getMessage());
+        }
+    }
+
+    private int getCancelOnDisconnectTypeField() {
+        return 35002;
+    }
+
+    private String getCancelOnDisconnectTypeDescription(String type) {
+        switch (type) {
+            case "0": return "No orders will be canceled on disconnect or logout";
+            case "1": return "Cancel all orders on disconnect only";
+            case "2": return "Cancel all orders on logout only";
+            case "3": return "Cancel all orders on disconnect or logout";
+            default: return "Unknown CancelOnDisconnectType: " + type;
+        }
+    }
+
+    private void checkCancelOnDisconnectAck(Message message, SessionID sessionId) {
+        try {
+            int cancelOnDisconnectField = getCancelOnDisconnectTypeField();
+            if (message.isSetField(cancelOnDisconnectField)) {
+                StringField codType = new StringField(cancelOnDisconnectField);
+                message.getField(codType);
+                String typeDescription = getCancelOnDisconnectTypeDescription(codType.getValue());
+                System.out.printf("--------- Counterparty CancelOnDisconnectType: %s (%s) for session: %s ---------\n",
+                        codType.getValue(), typeDescription, sessionId);
+            } else {
+                System.out.printf("--------- Counterparty does not support CancelOnDisconnectType for session: %s ---------\n",
+                        sessionId);
+            }
+        } catch (FieldNotFound e) {
+            // This is normal if the counterparty doesn't support this field
+            System.out.printf("--------- Counterparty does not echo CancelOnDisconnectType field for session: %s ---------\n",
+                    sessionId);
+        }
+    }
 
 	private static void sendCreateOrder(SessionID sessionID, ClOrdID ordClOrdId) {
 		try {
